@@ -1,8 +1,11 @@
 package catt
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/catt-ha/catt-go/catt/types"
 )
+
+var log = logrus.New()
 
 type Bridge struct {
 	done chan struct{}
@@ -34,19 +37,26 @@ func busToBinding(msgs <-chan types.Message, binding types.Binding, done chan st
 				name = msg.ItemName
 				value = *msg.Value
 			default:
-				// TODO log it
+				log.WithFields(logrus.Fields{
+					"message": msg,
+				}).Warn("received non-command message")
 				continue
 			}
 
 			item := binding.GetValue(name)
 			if item == nil {
-				// TODO log it
+				log.WithFields(logrus.Fields{
+					"item_name": name,
+				}).Warn("received message for non-existant item")
 				continue
 			}
 
 			err := item.SetValue(value)
 			if err != nil {
-				// TODO log it
+				log.WithFields(logrus.Fields{
+					"item":  item,
+					"value": value,
+				}).Warn("error setting item value")
 			}
 		}
 	}()
@@ -71,7 +81,9 @@ func bindingToBus(notifications <-chan types.Notification, bus types.Bus, done c
 				removeSub = true
 				skipState = true
 			default:
-				//TODO log it
+				log.WithFields(logrus.Fields{
+					"notification": notification,
+				}).Warn("invalid notification type")
 				continue
 			}
 
@@ -81,19 +93,25 @@ func bindingToBus(notifications <-chan types.Notification, bus types.Bus, done c
 					ItemName: item.GetName(),
 					Meta:     meta,
 				}); err != nil {
-					// TODO log it
+					log.WithFields(logrus.Fields{
+						"error": err,
+					}).Warn("meta publish error")
 				}
 			}
 
 			if newSub {
 				if err := bus.Subscribe(item.GetName(), types.CommandSub); err != nil {
-					// TODO log it
+					log.WithFields(logrus.Fields{
+						"error": err,
+					}).Warn("subscribe error")
 				}
 			}
 
 			if removeSub {
 				if err := bus.Unsubscribe(item.GetName(), types.CommandSub); err != nil {
-					// TODO log it
+					log.WithFields(logrus.Fields{
+						"error": err,
+					}).Warn("unsubscribe error")
 				}
 			}
 
@@ -103,7 +121,10 @@ func bindingToBus(notifications <-chan types.Notification, bus types.Bus, done c
 
 			value, err := item.GetValue()
 			if err != nil {
-				// TODO log it
+				log.WithFields(logrus.Fields{
+					"error": err,
+					"item":  item,
+				}).Warn("error getting item value")
 				continue
 			}
 
@@ -111,7 +132,9 @@ func bindingToBus(notifications <-chan types.Notification, bus types.Bus, done c
 				Type:  types.UpdateMessage,
 				Value: &value,
 			}); err != nil {
-				// TODO log it
+				log.WithFields(logrus.Fields{
+					"error": err,
+				}).Warn("state publish error")
 				continue
 			}
 		}

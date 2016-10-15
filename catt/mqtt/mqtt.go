@@ -7,9 +7,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/catt-ha/catt-go/catt/types"
 	emqtt "github.com/eclipse/paho.mqtt.golang"
 )
+
+var log = logrus.New()
 
 type mqtt struct {
 	cfg    Config
@@ -121,7 +124,9 @@ func NewMqtt(cfg Config) (*Mqtt, error) {
 		splitPath := strings.Split(msg.Topic(), "/")
 		l := len(splitPath)
 		if l < 2 {
-			// TODO log this
+			log.WithFields(logrus.Fields{
+				"path": msg.Topic(),
+			}).Warn("invalid topic")
 			return
 		}
 
@@ -145,13 +150,18 @@ func NewMqtt(cfg Config) (*Mqtt, error) {
 		case "meta":
 			err := meta.FromString(string(msg.Payload()))
 			if err != nil {
-				// TODO log this
+				log.WithFields(logrus.Fields{
+					"meta_string": msg.Payload(),
+					"error":       err,
+				}).Warn("error deserializing meta")
 				return
 			}
 			outMsg.Type = types.MetaMessage
 			outMsg.Meta = meta
 		default:
-			// TODO log this
+			log.WithFields(logrus.Fields{
+				"path": msg.Topic(),
+			}).Warn("invalid topic")
 			return
 		}
 

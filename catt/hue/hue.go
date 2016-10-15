@@ -1,14 +1,15 @@
 package hue
 
 import (
-	"fmt"
-	"log"
 	"sync"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/catt-ha/catt-go/catt/types"
 	"github.com/gbbr/hue"
 )
+
+var log = logrus.New()
 
 type Hue struct {
 	mu            sync.Mutex
@@ -24,12 +25,12 @@ func NewHue() (*Hue, error) {
 	}
 	if !b.IsPaired() {
 		// link button must be pressed before calling
-		fmt.Println("Please press the link button on your Hue!")
+		log.Info("Please press the link button on your Hue!")
 		if err := b.Pair(); err != nil {
 			return nil, err
 		}
 
-		fmt.Println("Pairing successful!")
+		log.Info("Pairing successful!")
 	}
 	binding := &Hue{
 		internal:      b,
@@ -48,7 +49,9 @@ func startWatcher(binding *Hue) {
 			binding.mu.Lock()
 			lights, err := binding.internal.Lights().List()
 			if err != nil {
-				log.Print("ERROR: ", err)
+				log.WithFields(logrus.Fields{
+					"error": err,
+				}).Warn("error refreshing lights")
 			}
 			lightsMap := buildMap(lights)
 			for k, v := range lightsMap {
