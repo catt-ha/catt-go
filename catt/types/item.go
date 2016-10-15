@@ -7,8 +7,8 @@ import (
 )
 
 type Meta struct {
-	Backend   *string           `toml:"backend"`
-	ValueType *string           `toml:"value_type"`
+	Backend   string            `toml:"backend,omitempty"`
+	ValueType string            `toml:"value_type,omitempty"`
 	Ext       map[string]string `toml:"ext"`
 }
 

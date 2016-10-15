@@ -19,7 +19,7 @@ func NewBridge(bus types.Bus, binding types.Binding) Bridge {
 	return Bridge{done}
 }
 
-func (b Bridge) Join() {
+func (b Bridge) Run() {
 	<-b.done
 }
 
